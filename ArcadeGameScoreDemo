@@ -1,0 +1,101 @@
+package ds;
+
+import java.util.Scanner;
+
+public class ArcadeGameScoreDemo {
+
+    // -------- MAIN METHOD --------
+    public static void main(String[] args) {
+
+        Scanner sc = new Scanner(System.in);
+
+        ArcadeGameScore system = new ArcadeGameScore();
+
+        system.loadFromFile(); // ✅ FIXED
+
+        int choice;
+
+        do {
+
+            System.out.println("\n===== ARCADE GAME SCORE SYSTEM =====");
+
+            System.out.println("1. Add Score");
+            System.out.println("2. Search Score by ID");
+            System.out.println("3. Display All Scores");
+            System.out.println("4. Display Leaderboard");
+            System.out.println("5. Sort Scores");
+            System.out.println("6. Undo Last Score");
+            System.out.println("7. Process Score Queue");
+            System.out.println("8. Save Scores");
+            System.out.println("9. Clear File & Reset Data (Admin Only)"); // 🔐 updated
+            System.out.println("10. Exit");
+
+            System.out.print("Enter Choice: ");
+            choice = sc.nextInt();
+
+            switch (choice) {
+
+                case 1:
+                    System.out.print("Enter Player ID: ");
+                    int id = sc.nextInt();
+
+                    sc.nextLine(); // clear buffer
+
+                    System.out.print("Enter Player Name: ");
+                    String name = sc.nextLine();
+
+                    System.out.print("Enter Score: ");
+                    int score = sc.nextInt();
+
+                    system.addScore(id, name, score);
+                    break;
+
+                case 2:
+                    System.out.print("Enter ID to Search: ");
+                    system.searchScore(sc.nextInt());
+                    break;
+
+                case 3:
+                    system.displayAll();
+                    break;
+
+                case 4:
+                    system.displayLeaderboard();
+                    break;
+
+                case 5:
+                    system.sortScores();
+                    break;
+
+                case 6:
+                    system.undo();
+                    break;
+
+                case 7:
+                    system.processQueue();
+                    break;
+
+                case 8:
+                    system.saveToFile();
+                    break;
+
+                case 9:
+                    sc.nextLine(); // clear buffer
+                    System.out.print("Enter Admin Password: ");
+                    String pass = sc.nextLine();
+                    system.clearFile(pass); // 🔐 FIXED
+                    break;
+
+                case 10:
+                    System.out.println("Exiting System...");
+                    break;
+
+                default:
+                    System.out.println("Invalid Choice!");
+            }
+
+        } while (choice != 10);
+
+        sc.close();
+    }
+}
