@@ -1,0 +1,302 @@
+import java.util.*;
+import java.io.*;
+
+public class ArcadeGameScore {
+
+    // -------- LINKED LIST NODE (Leaderboard) --------
+    class Node {
+        int id;
+        String name;
+        int score;
+        Node next;
+
+        Node(int id, String name, int score) {
+            this.id = id;
+            this.name = name;
+            this.score = score;
+            this.next = null;
+        }
+    }
+
+    private Node head = null;
+
+    // -------- ARRAYS --------
+    private final int MAX = 100;
+
+    private int[] ids = new int[MAX];
+    private String[] names = new String[MAX];
+    private int[] scores = new int[MAX];
+
+    private int count = 0;
+
+    // -------- STACK (Undo System) --------
+    private Stack<Integer> undoStack = new Stack<>();
+
+    // -------- QUEUE (Score Processing) --------
+    private Queue<Integer> scoreQueue = new LinkedList<>();
+
+
+    // -------- ADD SCORE --------
+    public void addScore(int id, String name, int score) {
+
+        if (count >= MAX) {
+            System.out.println("Storage Full!");
+            return;
+        }
+
+        ids[count] = id;
+        names[count] = name;
+        scores[count] = score;
+
+        undoStack.push(id);
+        scoreQueue.add(id);
+
+        insertLeaderboard(id, name, score);
+
+        count++;
+
+        System.out.println("Score Added Successfully!");
+    }
+
+
+    // -------- INSERT INTO LEADERBOARD --------
+    private void insertLeaderboard(int id, String name, int score) {
+
+        Node newNode = new Node(id, name, score);
+
+        if (head == null || head.score < score) {
+            newNode.next = head;
+            head = newNode;
+        } else {
+            Node temp = head;
+
+            while (temp.next != null && temp.next.score >= score) {
+                temp = temp.next;
+            }
+
+            newNode.next = temp.next;
+            temp.next = newNode;
+        }
+    }
+
+
+    // -------- REMOVE FROM LEADERBOARD --------
+    private void removeFromLeaderboard(int id) {
+
+        if (head == null) return;
+
+        if (head.id == id) {
+            head = head.next;
+            return;
+        }
+
+        Node temp = head;
+
+        while (temp.next != null && temp.next.id != id) {
+            temp = temp.next;
+        }
+
+        if (temp.next != null) {
+            temp.next = temp.next.next;
+        }
+    }
+
+
+    // -------- DISPLAY LEADERBOARD --------
+    public void displayLeaderboard() {
+
+        Node temp = head;
+
+        System.out.println("\n--- HIGH SCORE LEADERBOARD ---");
+
+        while (temp != null) {
+            System.out.println(temp.name + " - " + temp.score);
+            temp = temp.next;
+        }
+    }
+
+
+    // -------- SEARCH SCORE --------
+    public void searchScore(int id) {
+
+        for (int i = 0; i < count; i++) {
+
+            if (ids[i] == id) {
+                System.out.println("Player Name: " + names[i]);
+                System.out.println("Score: " + scores[i]);
+                return;
+            }
+        }
+
+        System.out.println("Score ID Not Found!");
+    }
+
+
+    // -------- DISPLAY ALL SCORES --------
+    public void displayAll() {
+
+        System.out.println("\n--- ALL SCORES ---");
+
+        for (int i = 0; i < count; i++) {
+
+            System.out.println(
+                    "ID: " + ids[i] +
+                    " | Name: " + names[i] +
+                    " | Score: " + scores[i]);
+        }
+    }
+
+
+    // -------- SORT SCORES --------
+    public void sortScores() {
+
+        for (int i = 0; i < count - 1; i++) {
+
+            for (int j = 0; j < count - i - 1; j++) {
+
+                if (scores[j] < scores[j + 1]) {
+
+                    int tempScore = scores[j];
+                    scores[j] = scores[j + 1];
+                    scores[j + 1] = tempScore;
+
+                    String tempName = names[j];
+                    names[j] = names[j + 1];
+                    names[j + 1] = tempName;
+
+                    int tempID = ids[j];
+                    ids[j] = ids[j + 1];
+                    ids[j + 1] = tempID;
+                }
+            }
+        }
+
+        System.out.println("Scores Sorted Successfully!");
+    }
+
+
+    // -------- UNDO LAST SCORE --------
+    public void undo() {
+
+        if (undoStack.isEmpty()) {
+            System.out.println("Nothing to Undo!");
+            return;
+        }
+
+        int lastID = undoStack.pop();
+
+        // REMOVE FROM ARRAY
+        for (int i = 0; i < count; i++) {
+
+            if (ids[i] == lastID) {
+
+                for (int j = i; j < count - 1; j++) {
+                    ids[j] = ids[j + 1];
+                    names[j] = names[j + 1];
+                    scores[j] = scores[j + 1];
+                }
+
+                count--;
+                break;
+            }
+        }
+
+        // REMOVE FROM LINKED LIST
+        removeFromLeaderboard(lastID);
+
+        // REMOVE FROM QUEUE
+        scoreQueue.remove(lastID);
+
+        System.out.println("Last Score Removed.");
+    }
+
+
+    // -------- PROCESS QUEUE --------
+    public void processQueue() {
+
+        if (scoreQueue.isEmpty()) {
+            System.out.println("No scores in queue.");
+            return;
+        }
+
+        System.out.println("Processing Score ID: " + scoreQueue.poll());
+    }
+
+
+    // -------- SAVE FILE --------
+    public void saveToFile() {
+
+        try {
+
+            FileWriter writer = new FileWriter("scores.txt");
+
+            for (int i = 0; i < count; i++) {
+                writer.write(ids[i] + "," + names[i] + "," + scores[i] + "\n");
+            }
+
+            writer.close();
+
+            System.out.println("Scores saved to file.");
+
+        } catch (IOException e) {
+            System.out.println("Error saving file.");
+        }
+    }
+
+
+    // -------- LOAD FILE --------
+    public void loadFromFile() {
+
+        try {
+
+            BufferedReader reader =
+                    new BufferedReader(new FileReader("scores.txt"));
+
+            String line;
+
+            while ((line = reader.readLine()) != null) {
+
+                String[] data = line.split(",");
+
+                int id = Integer.parseInt(data[0]);
+                String name = data[1];
+                int score = Integer.parseInt(data[2]);
+
+                addScore(id, name, score);
+            }
+
+            reader.close();
+
+        } catch (IOException e) {
+            System.out.println("No previous score file found.");
+        }
+    }
+
+
+    // -------- CLEAR FILE WITH PASSWORD --------
+    public void clearFile(String password) {
+
+        String correctPassword = "admin123";
+
+        if (!password.equals(correctPassword)) {
+            System.out.println("❌ Incorrect Password! Access Denied.");
+            return;
+        }
+
+        try {
+            FileWriter writer = new FileWriter("scores.txt");
+            writer.write("");
+            writer.close();
+
+            head = null;
+            count = 0;
+            undoStack.clear();
+            scoreQueue.clear();
+
+            System.out.println("✅ File and memory cleared successfully!");
+
+        } catch (IOException e) {
+            System.out.println("Error clearing file.");
+        }
+    }
+}
